@@ -1,0 +1,6 @@
+packages:
+  - langchain
+  - vercel-ai
+  - elizaos
+allowBuilds:
+  esbuild: true

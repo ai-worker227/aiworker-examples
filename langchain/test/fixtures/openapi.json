@@ -1,0 +1,179 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "aiworker-data (fixture)",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Service health (free)",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/v1/token/info": {
+      "get": {
+        "operationId": "tokenInfo",
+        "summary": "The cheapest way to look up a Base token",
+        "description": "Name, symbol, decimals, total supply, holder count, price, liquidity and pool count for one Base token. xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            },
+            "description": "the token contract"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "base"
+              ]
+            },
+            "description": "only base today"
+          }
+        ],
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.005000"
+          },
+          "flow": "authorization"
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/v1/polymarket/backtest": {
+      "post": {
+        "operationId": "polymarketBacktest",
+        "summary": "Replay one fixed rule over resolved Polymarket markets",
+        "description": "Deterministic, no LLM. History, not a prediction.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rule"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "rule": {
+                    "type": "string",
+                    "enum": [
+                      "favorite_hold",
+                      "longshot_hold",
+                      "late_entry",
+                      "momentum_1w"
+                    ],
+                    "description": "the rule"
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "rule parameter"
+                  },
+                  "markets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "optional slugs"
+                  },
+                  "window": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "monthly"
+                        ]
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    ],
+                    "description": "a named window or a number of days"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.250000"
+          },
+          "flow": "authorization"
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/v1/scrape/markdown": {
+      "post": {
+        "operationId": "scrapeMarkdown",
+        "summary": "Fetch one public web page as clean Markdown",
+        "description": "Buyer-supplied URL, no login walls, robots.txt honoured.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 8,
+                    "description": "the page"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-payment-info": {
+          "price": {
+            "mode": "fixed",
+            "currency": "USD",
+            "amount": "0.020000"
+          },
+          "flow": "authorization"
+        },
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    }
+  }
+}

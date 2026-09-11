@@ -1,0 +1,56 @@
+{
+  "name": "elizaos-plugin-aiworker",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --root .. --config vitest.config.ts elizaos",
+    "example": "tsx example.ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.0",
+    "@x402/core": "2.24.0",
+    "@x402/evm": "2.24.0",
+    "@x402/fetch": "2.24.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "description": "aiworker's paid x402 data routes as an ElizaOS plugin \u2014 one action per route, each paying its own call in USDC on Base",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai-worker227/aiworker-examples",
+    "directory": "elizaos"
+  },
+  "homepage": "https://aiworker.duckdns.org",
+  "keywords": [
+    "x402",
+    "aiworker",
+    "agent",
+    "tools",
+    "usdc",
+    "base",
+    "elizaos",
+    "eliza",
+    "plugin"
+  ],
+  "files": [
+    "src",
+    "README.md",
+    "example.ts"
+  ],
+  "peerDependencies": {
+    "@elizaos/core": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@elizaos/core": {
+      "optional": true
+    }
+  }
+}

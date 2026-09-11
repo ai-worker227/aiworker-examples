@@ -1,0 +1,124 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "aiworker edge", "version": "1.0.0" },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Free liveness probe: version, uptime and facilitator health. Never priced, never wrapped as a tool.",
+        "responses": { "200": { "description": "ok" } }
+      }
+    },
+    "/v1/token/info": {
+      "get": {
+        "summary": "Token info",
+        "description": "Returns metadata for one ERC-20 token on Base: symbol, name, decimals and total supply, plus the price snapshot when a pool is known. The lookup is read-only and served from a short-lived cache, so repeated calls for the same address stay cheap. Pass the checksummed contract address; unknown addresses answer 404 without settling.",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$",
+              "description": "ERC-20 contract address"
+            }
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["base"], "default": "base" }
+          }
+        ],
+        "x-payment-info": {
+          "price": { "mode": "fixed", "currency": "USD", "amount": "0.005000" },
+          "asset": "USDC",
+          "network": "eip155:8453"
+        },
+        "responses": { "200": { "description": "token metadata" } }
+      }
+    },
+    "/v1/polymarket/backtest": {
+      "post": {
+        "summary": "Backtest a Polymarket rule",
+        "description": "Replays a named trading rule over resolved Polymarket markets and returns fill-level PnL statistics. Rules are versioned; unknown names are rejected before any payment settles.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rule"],
+                "properties": {
+                  "rule": {
+                    "type": "string",
+                    "enum": ["favorite_hold", "underdog_revert", "momentum"],
+                    "description": "Named rule to replay"
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Probability threshold that arms the rule"
+                  },
+                  "markets": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Market slugs to include; empty means the curated universe"
+                  },
+                  "stop": {
+                    "oneOf": [{ "type": "number" }, { "type": "string" }],
+                    "description": "Stop loss as a fraction (0.1) or a preset name"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-payment-info": {
+          "price": { "mode": "fixed", "currency": "USD", "amount": "0.250000" },
+          "asset": "USDC",
+          "network": "eip155:8453"
+        },
+        "responses": { "200": { "description": "backtest report" } }
+      }
+    },
+    "/v1/scrape/markdown": {
+      "post": {
+        "summary": "Scrape a page to Markdown",
+        "description": "Fetches one buyer-supplied public URL and returns its main content as clean Markdown with title, word count and truncation flag.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "Public http(s) URL to fetch"
+                  },
+                  "max_chars": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 60000,
+                    "description": "Cap on the returned Markdown"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-payment-info": {
+          "price": { "mode": "fixed", "currency": "USD", "amount": "0.020000" },
+          "asset": "USDC",
+          "network": "eip155:8453"
+        },
+        "responses": { "200": { "description": "page markdown" } }
+      }
+    }
+  }
+}
