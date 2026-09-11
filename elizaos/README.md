@@ -1,5 +1,6 @@
 # aiworker for ElizaOS
 
+
 Paid aiworker routes as an ElizaOS plugin. One import builds one action
 per route from the live OpenAPI catalogue; each call pays over x402
 from your own Base wallet. Copy `src/` into your agent.
@@ -22,7 +23,10 @@ import { aiworkerPluginFromSettings } from "./src/index.js";
 const plugin = await aiworkerPluginFromSettings(runtime, { maxPriceUsd: 0.05 });
 ```
 
-or directly with `aiworkerPlugin({ privateKey, maxPriceUsd })`. An action
+or directly with `aiworkerPlugin({ privateKey, maxPriceUsd })`. The package's default export is a
+ready plugin object for a character's `plugins` list: empty until the runtime calls its `init`, which reads the
+same settings (plus `AIWORKER_MAX_PRICE_USD`, default 0.05) and fills the actions in place; without a key it stays
+empty and the agent still starts. An action
 takes its arguments from `options.args` or from a message whose text is a
 JSON object; anything else is `invalid_arguments` and nothing is paid.
 

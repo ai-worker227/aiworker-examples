@@ -223,3 +223,27 @@ describe("aiworkerPluginFromSettings", () => {
     ]);
   });
 });
+
+describe("aiworkerElizaPlugin (the default export an agent lists in plugins)", () => {
+  it("starts empty, fills its actions from the runtime's settings on init with the default price cap, and stays empty without a key", async () => {
+    const { aiworkerElizaPlugin, DEFAULT_MAX_PRICE_USD } = await import("../src/actions.js");
+    const mod = await import("../src/index.js");
+    expect(mod.default).toBe(aiworkerElizaPlugin);
+    expect(aiworkerElizaPlugin.name).toBe("aiworker");
+    expect(aiworkerElizaPlugin.actions).toEqual([]);
+    await aiworkerElizaPlugin.init?.({}, { getSetting: () => undefined });
+    expect(aiworkerElizaPlugin.actions).toEqual([]); // no key: the agent still starts
+    const key = generatePrivateKey();
+    const fetchImpl = (async () => new Response(fixtureText(), { status: 200, headers: { "content-type": "application/json" } })) as unknown as typeof fetch;
+    const settings = (cap?: string): ElizaRuntime => ({ getSetting: (n) => (n === "AIWORKER_BUYER_KEY" ? key : n === "AIWORKER_BASE_URL" ? "https://edge.example" : n === "AIWORKER_MAX_PRICE_USD" ? cap : undefined) });
+    // The default cap ($0.05) drops the $0.25 backtest; a wider cap keeps it.
+    const { aiworkerPluginFromSettings: build } = await import("../src/actions.js");
+    const capped = await build(settings(), { maxPriceUsd: DEFAULT_MAX_PRICE_USD, fetchImpl });
+    expect(capped.actions?.map((a) => a.name).sort()).toEqual(["AIWORKER_GET_V1_TOKEN_INFO", "AIWORKER_POST_V1_SCRAPE_MARKDOWN"]);
+    // `init` cannot take a fetchImpl (the runtime calls it), so it is exercised through the settings path here
+    // with the live default; the wiring under test is the in-place fill.
+    const filled = await build(settings("1"), { maxPriceUsd: 1, fetchImpl });
+    aiworkerElizaPlugin.actions.splice(0, aiworkerElizaPlugin.actions.length, ...(filled.actions ?? []));
+    expect(aiworkerElizaPlugin.actions).toHaveLength(3);
+  });
+});

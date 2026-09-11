@@ -210,6 +210,27 @@ export async function aiworkerPlugin(o: {
   };
 }
 
+/**
+ * The plugin object an ElizaOS 1.x character lists in `plugins: [...]` (or that the runtime loads by package name):
+ * empty until `init`, which reads the runtime's settings — `AIWORKER_BUYER_KEY`, optional `AIWORKER_BASE_URL`,
+ * `AIWORKER_CHAIN` and `AIWORKER_MAX_PRICE_USD` (default 0.05) — and fills `actions` in place. Without a key the
+ * plugin stays empty and the agent still starts; the missing setting is the agent operator's to add.
+ */
+export const DEFAULT_MAX_PRICE_USD = 0.05;
+export const aiworkerElizaPlugin: ElizaPlugin & { actions: ElizaAction[] } = {
+  name: "aiworker",
+  description: "Paid aiworker data routes (x402, USDC on Base): DeFi yields, page-to-Markdown, Base token and wallet checks, Polymarket resolution, odds, history, screener and backtests, fact checks, briefs, headline search. Each call pays its own price from the configured wallet.",
+  actions: [],
+  init: async (_config: Record<string, string>, runtime: ElizaRuntime): Promise<void> => {
+    const key = runtime.getSetting("AIWORKER_BUYER_KEY");
+    if (key === undefined || key === null || key === "") return;
+    const capRaw = runtime.getSetting("AIWORKER_MAX_PRICE_USD");
+    const cap = capRaw === undefined || capRaw === null || capRaw === "" ? DEFAULT_MAX_PRICE_USD : Number(capRaw);
+    const built = await aiworkerPluginFromSettings(runtime, { maxPriceUsd: Number.isFinite(cap) && cap > 0 ? cap : DEFAULT_MAX_PRICE_USD });
+    aiworkerElizaPlugin.actions.splice(0, aiworkerElizaPlugin.actions.length, ...(built.actions ?? []));
+  },
+};
+
 const PRIVATE_KEY_RE = /^0x[0-9a-fA-F]{64}$/;
 
 // Settings-driven constructor for agents: the key comes from the ElizaOS

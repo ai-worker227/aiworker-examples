@@ -30,6 +30,7 @@ above it; the examples cap at $0.05 per call. Nothing is settled unless the requ
 ```sh
 pnpm install
 pnpm test        # fakes only: no network, no wallet
+pnpm -r build    # dist/ for the npm packages
 pnpm typecheck
 ```
 

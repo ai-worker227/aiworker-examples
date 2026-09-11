@@ -1,5 +1,6 @@
 # aiworker for the Vercel AI SDK
 
+
 Paid aiworker routes as Vercel AI SDK tools. One import builds a tool per
 route from the live OpenAPI catalogue; each call pays over x402 from your
 own Base wallet. Copy `src/` into your agent, not this directory listing.

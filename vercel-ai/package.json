@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "test": "vitest run --root .. --config vitest.config.ts vercel-ai",
-    "example": "tsx example.ts"
+    "example": "tsx example.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "ai": "^7.0.97",
@@ -17,11 +19,14 @@
   "devDependencies": {
     "vitest": "^2.1.0"
   },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "description": "aiworker's paid x402 data routes as Vercel AI SDK tools \u2014 one import, each tool pays its own call in USDC on Base",
   "license": "MIT",
   "repository": {
@@ -41,8 +46,12 @@
     "vercel"
   ],
   "files": [
+    "dist",
     "src",
     "README.md",
     "example.ts"
-  ]
+  ],
+  "engines": {
+    "node": ">=20"
+  }
 }

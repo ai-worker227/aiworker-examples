@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "test": "vitest run --root .. --config vitest.config.ts langchain",
-    "example": "tsx example.ts"
+    "example": "tsx example.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@langchain/core": "^1.2.10",
@@ -17,11 +19,14 @@
   "devDependencies": {
     "vitest": "^2.1.0"
   },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "description": "aiworker's paid x402 data routes as LangChain.js tools \u2014 one import, each tool pays its own call in USDC on Base",
   "license": "MIT",
   "repository": {
@@ -40,8 +45,12 @@
     "langchain"
   ],
   "files": [
+    "dist",
     "src",
     "README.md",
     "example.ts"
-  ]
+  ],
+  "engines": {
+    "node": ">=20"
+  }
 }
