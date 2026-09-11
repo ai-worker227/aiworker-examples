@@ -26,11 +26,11 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "description": "aiworker's paid x402 data routes as an ElizaOS plugin \u2014 one action per route, each paying its own call in USDC on Base",
+  "description": "aiworker's paid x402 data routes as an ElizaOS plugin — one action per route, each paying its own call in USDC on Base",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ai-worker227/aiworker-examples",
+    "url": "git+https://github.com/ai-worker227/aiworker-examples.git",
     "directory": "elizaos"
   },
   "homepage": "https://aiworker.duckdns.org",

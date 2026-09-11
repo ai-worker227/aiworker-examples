@@ -27,11 +27,11 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "description": "aiworker's paid x402 data routes as LangChain.js tools \u2014 one import, each tool pays its own call in USDC on Base",
+  "description": "aiworker's paid x402 data routes as LangChain.js tools — one import, each tool pays its own call in USDC on Base",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ai-worker227/aiworker-examples",
+    "url": "git+https://github.com/ai-worker227/aiworker-examples.git",
     "directory": "langchain"
   },
   "homepage": "https://aiworker.duckdns.org",
