@@ -29,7 +29,8 @@ export interface ElizaState {
 }
 
 export interface ElizaRuntime {
-  getSetting(key: string): string | undefined | null;
+  /** `@elizaos/core` 1.x returns `string | boolean | number | null` here; the plugin coerces what it reads. */
+  getSetting(key: string): string | boolean | number | null | undefined;
   agentId?: string;
 }
 
@@ -43,6 +44,8 @@ export interface ElizaActionResult {
 }
 
 export interface ElizaAction {
+  /** `@elizaos/core` 1.x's `Action` carries an index signature; without it the mirror is not assignable to it. */
+  [k: string]: unknown;
   name: string;
   similes?: string[];
   description: string;
@@ -58,6 +61,7 @@ export interface ElizaAction {
 }
 
 export interface ElizaPlugin {
+  [k: string]: unknown;
   name: string;
   description: string;
   actions?: ElizaAction[];

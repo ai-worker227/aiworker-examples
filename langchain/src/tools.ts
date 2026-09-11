@@ -1,7 +1,7 @@
 /** One LangChain tool per paid route, paying over x402 with the buyer's wallet. */
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import { fetchCatalog, type RouteInfo } from "./catalog.js";
+import { fetchCatalog, resolvePath, type RouteInfo } from "./catalog.js";
 import { createPayingFetch } from "./payer.js";
 import { zodFromJsonSchema } from "./schema.js";
 
@@ -61,8 +61,10 @@ export function toolsFromRoutes(
       schema,
       func: async (input: Record<string, unknown>): Promise<string> => {
         try {
-          const args = (input ?? {}) as Record<string, unknown>;
-          let url = `${base}${route.path}`;
+          // `{slug}`-style path parameters are filled from the arguments first; the rest is the query or the body.
+          const resolved = resolvePath(route.path, (input ?? {}) as Record<string, unknown>);
+          const args = resolved.rest;
+          let url = `${base}${resolved.path}`;
           let init: RequestInit;
           if (route.method === "GET") {
             url = appendQuery(url, args);

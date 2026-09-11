@@ -37,16 +37,16 @@ function priceFromPaymentInfo(op: Record<string, unknown>): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Query parameters become an object schema; path params stay out (routes here use query only). */
+/** Query and path parameters become one object schema; a path parameter is always required. */
 function schemaFromParameters(params: unknown): Record<string, unknown> {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
   if (!Array.isArray(params)) return { type: "object", properties };
   for (const p of params) {
-    if (!isRecord(p) || p["in"] !== "query" || typeof p["name"] !== "string") continue;
+    if (!isRecord(p) || (p["in"] !== "query" && p["in"] !== "path") || typeof p["name"] !== "string") continue;
     const schema = isRecord(p["schema"]) ? p["schema"] : { type: "string" };
     properties[p["name"]] = schema;
-    if (p["required"] === true) required.push(p["name"]);
+    if (p["required"] === true || p["in"] === "path") required.push(p["name"]);
   }
   const out: Record<string, unknown> = { type: "object", properties };
   if (required.length > 0) out["required"] = required;
@@ -104,6 +104,28 @@ export function routesFromOpenApi(doc: unknown): RouteInfo[] {
     }
   }
   return routes;
+}
+
+
+/** The `{name}` parameters a path carries, in order. */
+export function pathParamsOf(path: string): string[] {
+  return [...path.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((m) => m[1]!);
+}
+
+/**
+ * Fills a route's `{name}` path parameters from the arguments and returns the remaining arguments for the query
+ * string or the body. A parameter with no argument is left in place, so the server answers 404, never a guess.
+ */
+export function resolvePath(path: string, args: Record<string, unknown>): { path: string; rest: Record<string, unknown> } {
+  const rest: Record<string, unknown> = { ...args };
+  let out = path;
+  for (const name of pathParamsOf(path)) {
+    const value = rest[name];
+    if (value === undefined || value === null) continue;
+    out = out.replace(`{${name}}`, encodeURIComponent(String(value)));
+    delete rest[name];
+  }
+  return { path: out, rest };
 }
 
 /** Fetches the live catalogue and extracts the paid routes. */

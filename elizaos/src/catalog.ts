@@ -36,7 +36,8 @@ function priceOf(operation: Record<string, unknown>): number | null {
 }
 
 // POST takes the JSON request-body schema; GET synthesises an object schema
-// from its query parameters. Anything missing degrades to an empty schema.
+// from its query and path parameters (a path parameter is always required).
+// Anything missing degrades to an empty schema.
 function inputSchemaOf(method: "GET" | "POST", operation: Record<string, unknown>): Record<string, unknown> {
   if (method === "GET") {
     const properties: Record<string, unknown> = {};
@@ -44,11 +45,11 @@ function inputSchemaOf(method: "GET" | "POST", operation: Record<string, unknown
     const parameters = operation["parameters"];
     if (Array.isArray(parameters)) {
       for (const parameter of parameters) {
-        if (!isRecord(parameter) || parameter["in"] !== "query") continue;
+        if (!isRecord(parameter) || (parameter["in"] !== "query" && parameter["in"] !== "path")) continue;
         const name = parameter["name"];
         if (typeof name !== "string" || name === "") continue;
         properties[name] = isRecord(parameter["schema"]) ? parameter["schema"] : {};
-        if (parameter["required"] === true) required.push(name);
+        if (parameter["required"] === true || parameter["in"] === "path") required.push(name);
       }
     }
     const schema: Record<string, unknown> = { type: "object", properties };
@@ -105,6 +106,28 @@ export function routesFromOpenApi(doc: unknown): RouteInfo[] {
     }
   }
   return routes;
+}
+
+
+/** The `{name}` parameters a path carries, in order. */
+export function pathParamsOf(path: string): string[] {
+  return [...path.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((m) => m[1]!);
+}
+
+/**
+ * Fills a route's `{name}` path parameters from the arguments and returns the remaining arguments for the query
+ * string or the body. A parameter with no argument is left in place, so the server answers 404, never a guess.
+ */
+export function resolvePath(path: string, args: Record<string, unknown>): { path: string; rest: Record<string, unknown> } {
+  const rest: Record<string, unknown> = { ...args };
+  let out = path;
+  for (const name of pathParamsOf(path)) {
+    const value = rest[name];
+    if (value === undefined || value === null) continue;
+    out = out.replace(`{${name}}`, encodeURIComponent(String(value)));
+    delete rest[name];
+  }
+  return { path: out, rest };
 }
 
 // The catalogue endpoints are free, so this uses a plain fetch.

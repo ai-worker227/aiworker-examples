@@ -5,7 +5,7 @@
 // so each execute() costs exactly the route's quoted price.
 import { tool, type Tool } from "ai";
 import { z } from "zod";
-import { fetchCatalog, type RouteInfo } from "./catalog.js";
+import { fetchCatalog, resolvePath, type RouteInfo } from "./catalog.js";
 import { createPayingFetch } from "./payer.js";
 import { zodFromJsonSchema } from "./schema.js";
 
@@ -65,7 +65,10 @@ export function toolsFromRoutes(
       description,
       inputSchema,
       execute: async (args): Promise<string> => {
-        const input = (args ?? {}) as Record<string, unknown>;
+        // `{slug}`-style path parameters are filled from the arguments first; the rest is the query or the body.
+        const resolved = resolvePath(path, (args ?? {}) as Record<string, unknown>);
+        const input = resolved.rest;
+        const target = `${baseUrl}${resolved.path}`;
         try {
           if (method === "GET") {
             const query = new URLSearchParams();
@@ -78,15 +81,12 @@ export function toolsFromRoutes(
               }
             }
             const suffix = query.toString();
-            const response = await fetchImpl(
-              suffix ? `${baseUrl}${path}?${suffix}` : `${baseUrl}${path}`,
-              { method: "GET" },
-            );
+            const response = await fetchImpl(suffix ? `${target}?${suffix}` : target, { method: "GET" });
             const text = await response.text();
             if (!response.ok) return failure(response.status, text);
             return okBody(text);
           }
-          const response = await fetchImpl(`${baseUrl}${path}`, {
+          const response = await fetchImpl(target, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(input),

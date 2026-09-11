@@ -1,6 +1,6 @@
 {
   "name": "aiworker-ai-sdk-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "test": "vitest run --root .. --config vitest.config.ts vercel-ai",

@@ -12,6 +12,7 @@ const BASE_URL = "https://edge.example";
 // Public Base USDC contract used as a schema-valid address argument.
 const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const OTHER = "0x4200000000000000000000000000000000000006";
+const PATH_DOC = { paths: { "/v1/defi/protocol/{slug}": { get: { operationId: "defi_protocol", summary: "one protocol", parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string" } }, { name: "verbose", in: "query", schema: { type: "boolean" } }], "x-payment-info": { price: { mode: "fixed", currency: "USD", amount: "0.010000" } } } } } };
 
 function routes(): RouteInfo[] {
   return routesFromOpenApi(JSON.parse(readFileSync(FIXTURE, "utf8")) as unknown);
@@ -78,12 +79,21 @@ describe("actionsFromRoutes", () => {
     expect(byName["AIWORKER_GET_V1_TOKEN_INFO"]?.similes).toEqual(["GET V1 TOKEN INFO"]);
   });
 
-  it("drops routes priced above maxPriceUsd, and routes whose path carries a parameter", () => {
+  it("drops routes priced above maxPriceUsd", () => {
     const capped = actionsFromRoutes(routes(), { baseUrl: BASE_URL, fetchImpl: fetch, maxPriceUsd: 0.05 });
     expect(capped.map((a) => a.name).sort()).toEqual(["AIWORKER_GET_V1_TOKEN_INFO", "AIWORKER_POST_V1_SCRAPE_MARKDOWN"]);
-    const withPathParam: RouteInfo = { key: "defi_protocol", method: "GET", path: "/v1/defi/protocol/:slug", summary: "one protocol", description: "", priceUsd: 0.01, inputSchema: { type: "object", properties: {} } };
-    const all = actionsFromRoutes([...routes(), withPathParam], { baseUrl: BASE_URL, fetchImpl: fetch });
-    expect(all.map((a) => a.name)).not.toContain("AIWORKER_DEFI_PROTOCOL");
+  });
+
+  it("fills a {slug} path parameter from the arguments (required in the schema) and keeps it out of the query", async () => {
+    const { fetchImpl, calls } = fakeFetch(() => jsonResponse({ tvl: 1 }));
+    const [route] = routesFromOpenApi(PATH_DOC);
+    expect(route?.inputSchema).toMatchObject({ required: ["slug"] });
+    const [action] = actionsFromRoutes([route!], { baseUrl: BASE_URL, fetchImpl });
+    expect(action?.name).toBe("AIWORKER_DEFI_PROTOCOL");
+    await expect(action!.validate(runtime, messageWith(JSON.stringify({ verbose: true })))).resolves.toBe(false); // slug missing
+    const r = await action!.handler(runtime, messageWith(JSON.stringify({ slug: "aave-v3", verbose: true })));
+    expect(r.success).toBe(true);
+    expect(calls[0]?.url).toBe(`${BASE_URL}/v1/defi/protocol/aave-v3?verbose=true`);
   });
 });
 

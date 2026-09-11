@@ -78,5 +78,3 @@ plus the settlement hash. Refuses to run without the key (exit 2).
 - No retries of a failed settlement: a non-2xx answer is returned
   as `{ success: false, error, text }` and the call is over.
 - No provider/evaluator: actions only, no custom providers or evaluators.
-- No path-parameter routes (`/v1/defi/protocol/:slug`): skipped rather
-  than mis-sent.

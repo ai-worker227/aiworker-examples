@@ -146,3 +146,16 @@ describe("toolsFromRoutes", () => {
     expect(JSON.parse(out as string)).toEqual({ error: "fetch_failed", body: "boom" });
   });
 });
+
+describe("path parameters", () => {
+  const PATH_DOC = { paths: { "/v1/defi/protocol/{slug}": { get: { operationId: "defi_protocol", summary: "one protocol", parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string" } }, { name: "verbose", in: "query", schema: { type: "boolean" } }], "x-payment-info": { price: { mode: "fixed", currency: "USD", amount: "0.010000" } } } } } };
+  it("fills a {slug} path parameter from the args (required in the schema) and keeps it out of the query", async () => {
+    const { fetchImpl, calls } = fakeFetch(() => jsonResponse({ tvl: 1 }));
+    const [route] = routesFromOpenApi(PATH_DOC);
+    expect(route?.inputSchema).toMatchObject({ required: ["slug"] });
+    const tools = toolsFromRoutes([route!], { baseUrl: BASE_URL, fetchImpl });
+    const out = await mustExecute(tools, "aiworker_defi_protocol")({ slug: "aave-v3", verbose: true }, EXEC_OPTIONS);
+    expect(calls[0]?.url).toBe(`${BASE_URL}/v1/defi/protocol/aave-v3?verbose=true`);
+    expect(JSON.parse(out as string)).toEqual({ tvl: 1 });
+  });
+});

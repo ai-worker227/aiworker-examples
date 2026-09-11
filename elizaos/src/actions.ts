@@ -9,7 +9,7 @@
 // responses, and sending that on the wire would leak the conversation and pay
 // for a request that can only fail. Arguments the schema rejects mean no
 // request at all (nothing paid), never a guess.
-import { fetchCatalog, type RouteInfo } from "./catalog.js";
+import { fetchCatalog, resolvePath, type RouteInfo } from "./catalog.js";
 import { createPayingFetch, settlementOf } from "./payer.js";
 import { zodFromJsonSchema } from "./schema.js";
 import type {
@@ -91,9 +91,11 @@ function optionArgs(options: Record<string, unknown> | undefined): Record<string
   return isRecord(args) ? args : null;
 }
 
-/** A route whose path carries a parameter (`/v1/defi/protocol/:slug`) cannot be called from a flat argument object; it is skipped, not mis-sent. */
-function hasPathParams(route: RouteInfo): boolean {
-  return /\/:[A-Za-z_]/.test(route.path);
+/** A setting as a string: ElizaOS 1.x's `getSetting` may answer a number or a boolean; an absent one is undefined. */
+function settingString(runtime: ElizaRuntime, key: string): string | undefined {
+  const v = runtime.getSetting(key);
+  if (v === undefined || v === null || v === "") return undefined;
+  return String(v);
 }
 
 export function actionsFromRoutes(
@@ -104,7 +106,6 @@ export function actionsFromRoutes(
   const actions: ElizaAction[] = [];
   for (const route of routes) {
     if (o.maxPriceUsd !== undefined && route.priceUsd !== null && route.priceUsd > o.maxPriceUsd) continue;
-    if (hasPathParams(route)) continue;
     const name = actionNameFor(route.key);
     const price = route.priceUsd === null ? "unknown" : String(route.priceUsd);
     const description =
@@ -125,7 +126,11 @@ export function actionsFromRoutes(
       return null;
     };
 
-    const send = async (input: Record<string, unknown>, callback?: ElizaHandlerCallback): Promise<ElizaActionResult> => {
+    const send = async (validated: Record<string, unknown>, callback?: ElizaHandlerCallback): Promise<ElizaActionResult> => {
+      // `{slug}`-style path parameters are filled from the arguments first; the rest is the query or the body.
+      const resolved = resolvePath(path, validated);
+      const input = resolved.rest;
+      const target = `${baseUrl}${resolved.path}`;
       let response: Response;
       if (method === "GET") {
         const query = new URLSearchParams();
@@ -135,9 +140,9 @@ export function actionsFromRoutes(
           else query.set(field, typeof value === "object" ? JSON.stringify(value) : String(value));
         }
         const suffix = query.toString();
-        response = await fetchImpl(suffix ? `${baseUrl}${path}?${suffix}` : `${baseUrl}${path}`, { method: "GET" });
+        response = await fetchImpl(suffix ? `${target}?${suffix}` : target, { method: "GET" });
       } else {
-        response = await fetchImpl(`${baseUrl}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+        response = await fetchImpl(target, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
       }
       const text = await response.text();
       const settlement = settlementOf(response);
@@ -222,10 +227,10 @@ export const aiworkerElizaPlugin: ElizaPlugin & { actions: ElizaAction[] } = {
   description: "Paid aiworker data routes (x402, USDC on Base): DeFi yields, page-to-Markdown, Base token and wallet checks, Polymarket resolution, odds, history, screener and backtests, fact checks, briefs, headline search. Each call pays its own price from the configured wallet.",
   actions: [],
   init: async (_config: Record<string, string>, runtime: ElizaRuntime): Promise<void> => {
-    const key = runtime.getSetting("AIWORKER_BUYER_KEY");
-    if (key === undefined || key === null || key === "") return;
-    const capRaw = runtime.getSetting("AIWORKER_MAX_PRICE_USD");
-    const cap = capRaw === undefined || capRaw === null || capRaw === "" ? DEFAULT_MAX_PRICE_USD : Number(capRaw);
+    const key = settingString(runtime, "AIWORKER_BUYER_KEY");
+    if (key === undefined) return;
+    const capRaw = settingString(runtime, "AIWORKER_MAX_PRICE_USD");
+    const cap = capRaw === undefined ? DEFAULT_MAX_PRICE_USD : Number(capRaw);
     const built = await aiworkerPluginFromSettings(runtime, { maxPriceUsd: Number.isFinite(cap) && cap > 0 ? cap : DEFAULT_MAX_PRICE_USD });
     aiworkerElizaPlugin.actions.splice(0, aiworkerElizaPlugin.actions.length, ...(built.actions ?? []));
   },
@@ -239,14 +244,14 @@ export async function aiworkerPluginFromSettings(
   runtime: ElizaRuntime,
   o?: { maxPriceUsd?: number; fetchImpl?: typeof fetch },
 ): Promise<ElizaPlugin> {
-  const key = runtime.getSetting("AIWORKER_BUYER_KEY");
-  if (key === undefined || key === null || key === "") throw new Error("AIWORKER_BUYER_KEY is not set");
+  const key = settingString(runtime, "AIWORKER_BUYER_KEY");
+  if (key === undefined) throw new Error("AIWORKER_BUYER_KEY is not set");
   if (!PRIVATE_KEY_RE.test(key)) throw new Error("AIWORKER_BUYER_KEY is not a 0x-prefixed 64-hex private key");
-  const baseUrl = runtime.getSetting("AIWORKER_BASE_URL") ?? undefined;
-  const chainRaw = runtime.getSetting("AIWORKER_CHAIN");
+  const baseUrl = settingString(runtime, "AIWORKER_BASE_URL");
+  const chainRaw = settingString(runtime, "AIWORKER_CHAIN");
   const chain = chainRaw === "baseSepolia" ? "baseSepolia" : chainRaw === "base" ? "base" : undefined;
   return aiworkerPlugin({
-    baseUrl: baseUrl ?? undefined,
+    baseUrl,
     privateKey: key as `0x${string}`,
     chain,
     maxPriceUsd: o?.maxPriceUsd,
