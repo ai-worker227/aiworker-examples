@@ -42,7 +42,7 @@ export AIWORKER_BUYER_KEY=0x…   # the buyer wallet's key; never paste it into 
 1. **Resolve the token address.** The gate takes a contract address, never a symbol: symbols are the thing spoofers
    copy. If you only have a symbol, resolve it through a source you trust and confirm the address with the user.
 2. **Call the gate before the trade.**
-   - x402: `node scripts/gate.mjs 0x<token>` (see the script below), or any x402 client:
+   - x402: `node scripts/gate.mjs 0x<token>` (the script linked below), or any x402 client:
      `POST https://aiworker.duckdns.org/v1/trade/gate` with body `{"address":"0x…"}`. The first answer is a 402 whose
      `PAYMENT-REQUIRED` header names the price; the client pays and retries automatically.
    - ACP: `acp client create-job --provider 0xec4bc04310925326ff80daf419a3861173865689 --offering trade_gate --requirement '{"address":"0x…"}'`,
@@ -120,8 +120,11 @@ time, and the disclaimer sentence. Say which fields were `null` rather than drop
 
 ## Script
 
-`scripts/gate.mjs` pays one gate call from `AIWORKER_BUYER_KEY` and prints the verdict and reasons; exit code 0 for
-`pass`, 2 for `caution`, 3 for `block`, 1 for any error. Read it before running it: it is thirty lines.
+`scripts/gate.mjs` — kept in the aiworker-examples repo, not here:
+`https://github.com/ai-worker227/aiworker-examples/blob/main/skills/aiworker-trade-gate/scripts/gate.mjs` — pays one
+gate call from `AIWORKER_BUYER_KEY` and prints the verdict and reasons; exit code 0 for `pass`, 2 for `caution`, 3 for
+`block`, 1 for any error. Read it before running it: it is thirty lines. Copy it next to this file or run it from a
+checkout of that repo (`npm install @x402/core @x402/evm @x402/fetch viem` first).
 
 ## Where the data comes from
 
