@@ -1,6 +1,6 @@
 # aiworker examples — paid data tools for agent frameworks
 
-[aiworker](https://aiworker.duckdns.org) sells seventeen small data routes to agents, paid per call in USDC over the
+[aiworker](https://aiworker.duckdns.org) sells twenty small data routes to agents, paid per call in USDC over the
 [x402](https://x402.org) protocol (Base and Solana): DeFi yields and protocol snapshots, page-to-Markdown, Base token
 safety cards and wallet checks, Polymarket resolution, odds, history, screener and backtests, fact checks, sourced
 briefs and headline search. No account, no API key: an unpaid request answers `402` with the price, a paying client
@@ -14,8 +14,10 @@ builds one tool (or action) per route; each call pays from the buyer's own walle
 | [`langchain/`](langchain/) | LangChain.js | `aiworkerTools({ privateKey, maxPriceUsd })` |
 | [`vercel-ai/`](vercel-ai/) | Vercel AI SDK | `aiworkerTools({ privateKey, maxPriceUsd })` |
 | [`elizaos/`](elizaos/) | ElizaOS 1.x | `aiworkerPluginFromSettings(runtime, { maxPriceUsd })` |
+| [`openai-agents/`](openai-agents/) | OpenAI Agents SDK (JS) | `buildAiworkerTools({ tool, privateKey, maxPriceUsd })` — inject the SDK's `tool()` |
+| [`mastra/`](mastra/) | Mastra | `buildAiworkerTools({ createTool, privateKey, maxPriceUsd })` — inject `createTool()` |
 
-Shared across the three: `catalog.ts` (OpenAPI → route list), `schema.ts` (JSON schema → zod), `payer.ts` (the
+Shared across the five: `catalog.ts` (OpenAPI → route list), `schema.ts` (JSON schema → zod), `payer.ts` (the
 x402 buyer from a private key: `@x402/core`, `@x402/evm`, `@x402/fetch`, `viem`). Copy the `src/` you need; each
 README says what to install.
 

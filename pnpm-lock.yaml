@@ -71,6 +71,50 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.2)
 
+  mastra:
+    dependencies:
+      '@x402/core':
+        specifier: 2.24.0
+        version: 2.24.0
+      '@x402/evm':
+        specifier: 2.24.0
+        version: 2.24.0(typescript@5.9.3)
+      '@x402/fetch':
+        specifier: 2.24.0
+        version: 2.24.0
+      viem:
+        specifier: ^2.21.0
+        version: 2.56.3(typescript@5.9.3)(zod@3.25.76)
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.2)
+
+  openai-agents:
+    dependencies:
+      '@x402/core':
+        specifier: 2.24.0
+        version: 2.24.0
+      '@x402/evm':
+        specifier: 2.24.0
+        version: 2.24.0(typescript@5.9.3)
+      '@x402/fetch':
+        specifier: 2.24.0
+        version: 2.24.0
+      viem:
+        specifier: ^2.21.0
+        version: 2.56.3(typescript@5.9.3)(zod@3.25.76)
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.2)
+
   vercel-ai:
     dependencies:
       '@x402/core':

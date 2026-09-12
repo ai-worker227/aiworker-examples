@@ -1,0 +1,56 @@
+{
+  "name": "aiworker-openai-agents-tools",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --root .. --config vitest.config.ts openai-agents",
+    "example": "tsx example.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "zod": "^3.24.0",
+    "@x402/core": "2.24.0",
+    "@x402/evm": "2.24.0",
+    "@x402/fetch": "2.24.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "description": "aiworker's paid x402 data routes as OpenAI Agents SDK tools \u2014 inject the SDK's tool() and each tool pays its own call in USDC on Base",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ai-worker227/aiworker-examples.git",
+    "directory": "openai-agents"
+  },
+  "homepage": "https://aiworker.duckdns.org",
+  "keywords": [
+    "x402",
+    "aiworker",
+    "agent",
+    "tools",
+    "usdc",
+    "base",
+    "openai-agents",
+    "openai"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "example.ts"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
