@@ -32,7 +32,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 // the live catalogue names operations by key (`token_info` → `AIWORKER_TOKEN_INFO`).
 // Non-alphanumerics collapse to one underscore, so the name always matches
 // `^[A-Z0-9_]+$`, which ElizaOS action names require.
-function actionNameFor(key: string): string {
+export function actionNameFor(key: string): string {
   const safe = key
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "_")
@@ -206,7 +206,7 @@ export async function aiworkerPlugin(o: {
   const baseUrl = o.baseUrl ?? DEFAULT_BASE_URL;
   const lowLevel = o.fetchImpl ?? fetch;
   const routes = await fetchCatalog(baseUrl, lowLevel);
-  const paying = createPayingFetch({ privateKey: o.privateKey, chain: o.chain, fetchImpl: lowLevel });
+  const paying = createPayingFetch({ privateKey: o.privateKey, chain: o.chain, fetchImpl: lowLevel, maxPriceUsd: o.maxPriceUsd });
   const actions = actionsFromRoutes(routes, { baseUrl, fetchImpl: paying, maxPriceUsd: o.maxPriceUsd });
   return {
     name: "aiworker",

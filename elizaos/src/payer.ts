@@ -17,10 +17,20 @@ export interface Settlement {
 
 // Paying fetch: answers 402s by signing with the buyer's key and retrying.
 // Pass-through for everything else (free routes, 200s, errors).
+/** Atomic USDC (6 decimals) of a payment option, whichever field name the server used (v2 `amount`, v1 `maxAmountRequired`). */
+function atomicAmountOf(a: PaymentRequirements): bigint | null {
+  const raw = (a as unknown as { amount?: unknown; maxAmountRequired?: unknown }).amount ?? (a as unknown as { maxAmountRequired?: unknown }).maxAmountRequired;
+  if (typeof raw !== "string" || !/^\d+$/.test(raw)) return null;
+  return BigInt(raw);
+}
+
 export function createPayingFetch(o: {
   privateKey: `0x${string}`;
   chain?: "base" | "baseSepolia";
   fetchImpl?: typeof fetch;
+  /** The most one call may cost, in USD. Enforced here, on the amount the server's 402 actually asks for — not on the
+   *  catalogue's advertised price — so a server that quotes more than it lists is refused before anything is signed. */
+  maxPriceUsd?: number;
 }): typeof fetch {
   const account = privateKeyToAccount(o.privateKey);
   // Read-only client for the signer's contract reads; no key material here.
@@ -28,11 +38,19 @@ export function createPayingFetch(o: {
     chain: o.chain === "baseSepolia" ? baseSepolia : base,
     transport: http(),
   });
+  const capAtomic = o.maxPriceUsd === undefined ? null : BigInt(Math.round(o.maxPriceUsd * 1_000_000));
   const client = new x402Client((_version: number, accepts: PaymentRequirements[]) => {
     const evm = accepts.filter((a) => a.network.startsWith("eip155:"));
-    const picked = evm[0] ?? accepts[0];
-    if (!picked) throw new Error("x402: server offered no payment options");
-    return picked;
+    const candidates = evm.length > 0 ? evm : accepts;
+    if (candidates.length === 0) throw new Error("x402: server offered no payment options");
+    if (capAtomic === null) return candidates[0]!;
+    // An option whose amount cannot be read is never signed under a cap: unknown is not "within budget".
+    const affordable = candidates.filter((a) => { const n = atomicAmountOf(a); return n !== null && n <= capAtomic; });
+    if (affordable.length === 0) {
+      const asked = atomicAmountOf(candidates[0]!);
+      throw new Error(`x402: the server asks ${asked === null ? "an unreadable amount" : `$${(Number(asked) / 1_000_000).toFixed(6)}`}, over AIWORKER_MAX_PRICE_USD ($${o.maxPriceUsd}); nothing was signed`);
+    }
+    return affordable[0]!;
   });
   registerExactEvmScheme(client, { signer: toClientEvmSigner(account, publicClient) });
   return wrapFetchWithPayment(o.fetchImpl ?? fetch, client) as typeof fetch;

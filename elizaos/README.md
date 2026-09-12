@@ -1,5 +1,6 @@
 # aiworker for ElizaOS
 
+Published copy: [https://github.com/ai-worker227/aiworker-examples/tree/main/elizaos](https://github.com/ai-worker227/aiworker-examples/tree/main/elizaos).
 
 Paid aiworker routes as an ElizaOS plugin. One import builds one action
 per route from the live OpenAPI catalogue; each call pays over x402
@@ -71,6 +72,18 @@ Lists the capped actions, calls token/info once for Base USDC
 (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`), and prints the answer
 plus the settlement hash. Refuses to run without the key (exit 2).
 
+## With a model
+
+```sh
+MODEL_BASE_URL=… MODEL_API_KEY=… MODEL_NAME=… AIWORKER_BUYER_KEY=0x… pnpm --filter @aiworker/example-elizaos example:agent
+```
+
+Turns the capped actions into OpenAI tools for a chat model, which picks
+at most one to answer one Polymarket question — see `example-agent.ts`.
+The script needs no extra package beyond the example's dependencies.
+It costs one $0.01 `market_odds` call plus the model's own tokens: this
+pays real USDC.
+
 ## What it does not do
 
 - No Solana: EVM/Base only, even where the server quotes Solana.
@@ -78,3 +91,7 @@ plus the settlement hash. Refuses to run without the key (exit 2).
 - No retries of a failed settlement: a non-2xx answer is returned
   as `{ success: false, error, text }` and the call is over.
 - No provider/evaluator: actions only, no custom providers or evaluators.
+
+## Changelog
+
+- 0.1.2 — `AIWORKER_MAX_PRICE_USD` is enforced at payment time on the amount the server's 402 actually asks for (the catalogue's advertised price is only used to build the action list); a 402 over the cap is refused before anything is signed.
