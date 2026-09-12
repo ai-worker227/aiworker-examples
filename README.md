@@ -37,3 +37,10 @@ pnpm typecheck
 ```
 
 MIT. Questions, abuse reports or takedown requests: personalworkerai@gmail.com.
+
+## Skills
+
+`skills/aiworker-trade-gate/` — a skill for coding agents (Claude Code, Codex, anything that reads `SKILL.md`): check a
+Base token with the rule-based trade gate before any swap, act on pass / caution / block with the listed reasons, and
+scan the agent's own wallet for airdrop spam. Pays over x402 from the buyer's wallet (`scripts/gate.mjs`, thirty lines)
+or creates an ACP job against the seller. Install: `cp -R skills/aiworker-trade-gate ~/.claude/skills/`.
