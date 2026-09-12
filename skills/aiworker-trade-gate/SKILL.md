@@ -64,6 +64,36 @@ export AIWORKER_BUYER_KEY=0x…   # the buyer wallet's key; never paste it into 
 5. **Never invent what the document does not say.** A `null` field is an unanswered source, not a zero. A `503` is an
    upstream outage: nothing was charged; retry later rather than guessing.
 
+## When not to use it
+
+- Tokens on any chain but Base (`eip155:8453`): the gate answers `404 not_a_contract` or a wrong-chain card. Do not
+  reuse a Base verdict for the same symbol elsewhere.
+- As a price or timing signal: the document carries no forecast. Pair it with your own market logic.
+- As the only check on a large trade: `pass` is "no rule tripped", not a guarantee; keep the user's confirmation.
+
+## Approval gates
+
+- **Spending:** each x402 call spends the listed price from `AIWORKER_BUYER_KEY`'s wallet; each ACP job locks the
+  offering price in escrow. Tell the user the price once per session before the first call and stop if the wallet
+  cannot cover it (a `402` after the retry means the balance is short — never move funds to fix that on your own).
+- **Trading:** a `block` ends the workflow; a `caution` needs an explicit human go-ahead quoting the reasons; a `pass`
+  proceeds only if the user asked for the trade in the first place.
+- Never approve, sell or "clean up" tokens the scan marked `honeypot`, `spoof` or `dust`, even if asked to sell them —
+  explain why instead (a honeypot cannot be sold; a spoof approval can drain the real token's allowance).
+
+## Stop conditions and handoff
+
+- Stop and report when the gate answers `503`, `504` or `502` twice in a row, when the buyer wallet is short, or when
+  the token address could not be confirmed. Hand the user the last document verbatim and the reason you stopped.
+- Never retry a paid call in a loop: at most two attempts per token per session.
+
+## Validation and output contract
+
+Before acting, check the document: `verdict` is one of `pass | caution | block`; `reasons` is an array; `chain` is
+`eip155:8453`; `address` equals the one you sent (lower-cased). Report to the user: the verdict in one line, the
+reasons as a list (severity, code, detail), the liquidity, pool age and holder count it rested on, the `generated_at`
+time, and the disclaimer sentence. Say which fields were `null` rather than dropping them.
+
 ## The gate document
 
 ```json
