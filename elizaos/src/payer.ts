@@ -33,16 +33,17 @@ export function createPayingFetch(o: {
   maxPriceUsd?: number;
 }): typeof fetch {
   const account = privateKeyToAccount(o.privateKey);
+  const chain = o.chain === "baseSepolia" ? baseSepolia : base;
+  // The one CAIP-2 network this buyer signs for. Registered as the ONLY network of the scheme and re-checked in the
+  // selector, so a 402 that offers an affordable quote on another EVM chain is refused before anything is signed
+  // (registry review, 2026-09-12: `@x402/evm` registers `eip155:*` by default).
+  const network = `eip155:${chain.id}`;
   // Read-only client for the signer's contract reads; no key material here.
-  const publicClient = createPublicClient({
-    chain: o.chain === "baseSepolia" ? baseSepolia : base,
-    transport: http(),
-  });
+  const publicClient = createPublicClient({ chain, transport: http() });
   const capAtomic = o.maxPriceUsd === undefined ? null : BigInt(Math.round(o.maxPriceUsd * 1_000_000));
   const client = new x402Client((_version: number, accepts: PaymentRequirements[]) => {
-    const evm = accepts.filter((a) => a.network.startsWith("eip155:"));
-    const candidates = evm.length > 0 ? evm : accepts;
-    if (candidates.length === 0) throw new Error("x402: server offered no payment options");
+    const candidates = accepts.filter((a) => a.network === network);
+    if (candidates.length === 0) throw new Error(`x402: the server offers no payment option on ${network} (offered: ${accepts.map((a) => a.network).join(", ") || "none"}); nothing was signed`);
     if (capAtomic === null) return candidates[0]!;
     // An option whose amount cannot be read is never signed under a cap: unknown is not "within budget".
     const affordable = candidates.filter((a) => { const n = atomicAmountOf(a); return n !== null && n <= capAtomic; });
@@ -52,7 +53,7 @@ export function createPayingFetch(o: {
     }
     return affordable[0]!;
   });
-  registerExactEvmScheme(client, { signer: toClientEvmSigner(account, publicClient) });
+  registerExactEvmScheme(client, { signer: toClientEvmSigner(account, publicClient), networks: [network as never] });
   return wrapFetchWithPayment(o.fetchImpl ?? fetch, client) as typeof fetch;
 }
 

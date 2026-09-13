@@ -1,0 +1,14 @@
+{
+  "name": "aiworker-examples",
+  "owner": { "name": "aiworker-data", "url": "https://github.com/ai-worker227" },
+  "metadata": { "description": "aiworker: paid data tools for agents over x402 — one plugin with the MCP server and the skills.", "version": "0.1.0" },
+  "plugins": [
+    {
+      "name": "aiworker",
+      "source": "./",
+      "description": "The aiworker MCP server (paid data tools over x402, USDC on Base) plus the aiworker skills: trade gate, wallet hygiene, deep research.",
+      "version": "0.1.0",
+      "category": "data"
+    }
+  ]
+}

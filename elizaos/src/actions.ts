@@ -145,6 +145,9 @@ export function actionsFromRoutes(
         response = await fetchImpl(target, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
       }
       const text = await response.text();
+      // The settlement, when the server reports one, rides on the result either way: under the server's
+      // authorization flow a non-2xx answer carries none (the server settles only on 200); a route that settles before
+      // work (its 402 says so) can fail after settling, and the hash is then the operator's reconciliation handle.
       const settlement = settlementOf(response);
       if (!response.ok) {
         return {
@@ -169,12 +172,13 @@ export function actionsFromRoutes(
       description,
       // One example per action so ElizaOS's action selection has a shape to match: the route's own example input as the message.
       examples: [[{ name: "user", content: { text: JSON.stringify(route.inputSchema["example"] ?? {}) } }, { name: "agent", content: { text: `Calling ${name}.`, actions: [name] } }]],
-      // ElizaOS 1.x calls validate(runtime, message, state): true when the message text is a JSON object the
-      // route's schema accepts. A handler invoked with `options.args` is validated again there.
-      validate: async (_runtime: ElizaRuntime, message: ElizaMemory, _state?: ElizaState): Promise<boolean> => {
-        const parsed = messageArgs(message);
-        return parsed !== null && schema.safeParse(parsed).success;
-      },
+      // ElizaOS 1.x calls validate(runtime, message, state) to ask whether the action is AVAILABLE this turn, not
+      // whether the message already carries the route's arguments (registry review, 2026-09-12: a validate that
+      // demanded a JSON-only message made every action unreachable from ordinary conversation). The plugin only
+      // builds actions when the key and the catalogue are present, so availability is the price cap check; the
+      // arguments are resolved and schema-checked at the handler boundary, where a miss answers `invalid_arguments`
+      // naming the fields — never a paid call.
+      validate: async (_runtime: ElizaRuntime, _message: ElizaMemory, _state?: ElizaState): Promise<boolean> => true,
       handler: async (
         _runtime: ElizaRuntime,
         message: ElizaMemory,
@@ -183,7 +187,7 @@ export function actionsFromRoutes(
         callback?: ElizaHandlerCallback,
       ): Promise<ElizaActionResult> => {
         const input = resolveArgs(options, message);
-        if (input === null) return { success: false, error: "invalid_arguments", text: JSON.stringify({ error: "invalid_arguments", body: "no arguments the route's schema accepts (options.args or a JSON message)" }) };
+        if (input === null) return { success: false, error: "invalid_arguments", text: JSON.stringify({ error: "invalid_arguments", expected: route.inputSchema, body: "no arguments the route's schema accepts: pass them as options.args, or as a JSON object in the message text, with these fields" }) };
         try {
           return await send(input, callback);
         } catch (err) {

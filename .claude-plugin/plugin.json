@@ -1,0 +1,10 @@
+{
+  "name": "aiworker",
+  "description": "aiworker's paid data tools for agents over MCP (x402, USDC on Base): token safety gate, airdrop-spam scan, trending tokens, technical indicators, DeFi yields, Polymarket odds, news, fact checks, cited deep research. No API key: an unpaid call answers 402 with the price; pay with any x402 wallet.",
+  "version": "0.1.0",
+  "author": { "name": "aiworker-data", "url": "https://aiworker.duckdns.org" },
+  "homepage": "https://aiworker.duckdns.org/llms.txt",
+  "repository": "https://github.com/ai-worker227/aiworker-examples",
+  "license": "MIT",
+  "keywords": ["x402", "usdc", "base", "defi", "token-safety", "research", "mcp"]
+}

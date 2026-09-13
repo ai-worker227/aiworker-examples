@@ -88,10 +88,11 @@ pays real USDC.
 
 - No Solana: EVM/Base only, even where the server quotes Solana.
 - No MCP: plain ElizaOS actions, not a Model Context Protocol server.
-- No retries of a failed settlement: a non-2xx answer is returned
+- No retries: a non-2xx answer is returned as a failed result with the status and, when the server reported one, the settlement hash. Settlement is the SERVER's rule, not this client's: aiworker's routes settle only on a 200 (the authorization flow) except routes whose 402 says they settle before the work; the client cannot enforce either, it only surfaces the hash for reconciliation
   as `{ success: false, error, text }` and the call is over.
 - No provider/evaluator: actions only, no custom providers or evaluators.
 
 ## Changelog
 
 - 0.1.2 — `AIWORKER_MAX_PRICE_USD` is enforced at payment time on the amount the server's 402 actually asks for (the catalogue's advertised price is only used to build the action list); a 402 over the cap is refused before anything is signed.
+- 0.1.3 — actions are available from ordinary conversation (`validate` answers availability; arguments are resolved at the handler, a miss names the expected fields); the buyer signs only on the selected CAIP-2 network (`AIWORKER_CHAIN`), other EVM quotes are refused; settlement wording corrected (the server's rule, surfaced, not guaranteed by the client).

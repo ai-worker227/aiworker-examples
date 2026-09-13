@@ -40,6 +40,11 @@ MIT. Questions, abuse reports or takedown requests: personalworkerai@gmail.com.
 
 ## Skills
 
+Three skills for coding agents (`npx skills add ai-worker227/aiworker-examples` installs them; or copy a folder into
+`~/.claude/skills/`): `skills/aiworker-trade-gate/`, `skills/aiworker-wallet-hygiene/`, `skills/aiworker-deep-research/`.
+Claude Code users can also add this repo as a plugin marketplace (`/plugin marketplace add ai-worker227/aiworker-examples`,
+then `/plugin install aiworker@aiworker-examples`): the plugin carries the aiworker MCP server (`.mcp.json`) and the skills.
+
 `skills/aiworker-trade-gate/` — a skill for coding agents (Claude Code, Codex, anything that reads `SKILL.md`): check a
 Base token with the rule-based trade gate before any swap, act on pass / caution / block with the listed reasons, and
 scan the agent's own wallet for airdrop spam. Pays over x402 from the buyer's wallet (`scripts/gate.mjs`, thirty lines)

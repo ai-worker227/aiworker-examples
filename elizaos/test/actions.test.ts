@@ -90,22 +90,35 @@ describe("actionsFromRoutes", () => {
     expect(route?.inputSchema).toMatchObject({ required: ["slug"] });
     const [action] = actionsFromRoutes([route!], { baseUrl: BASE_URL, fetchImpl });
     expect(action?.name).toBe("AIWORKER_DEFI_PROTOCOL");
-    await expect(action!.validate(runtime, messageWith(JSON.stringify({ verbose: true })))).resolves.toBe(false); // slug missing
+    // Availability, not arguments: validate is true for any message; the missing slug is refused at the handler.
+    await expect(action!.validate(runtime, messageWith(JSON.stringify({ verbose: true })))).resolves.toBe(true);
+    const missing = await action!.handler(runtime, messageWith(JSON.stringify({ verbose: true })));
+    expect(missing).toMatchObject({ success: false, error: "invalid_arguments" });
+    expect(JSON.parse(missing.text ?? "{}")).toMatchObject({ expected: { required: ["slug"] } });
     const r = await action!.handler(runtime, messageWith(JSON.stringify({ slug: "aave-v3", verbose: true })));
     expect(r.success).toBe(true);
     expect(calls[0]?.url).toBe(`${BASE_URL}/v1/defi/protocol/aave-v3?verbose=true`);
   });
 });
 
-describe("validate (ElizaOS 1.x: runtime, message, state)", () => {
-  it("accepts a JSON message the schema accepts, rejects prose and an object the schema rejects", async () => {
+describe("validate (ElizaOS 1.x: runtime, message, state) answers availability, not arguments", () => {
+  it("is true for prose and for JSON alike, so the runtime can select the action from an ordinary conversation", async () => {
     const actions = actionsFromRoutes(routes(), { baseUrl: BASE_URL, fetchImpl: fetch });
     const info = actionByName(actions, "AIWORKER_GET_V1_TOKEN_INFO");
     const backtest = actionByName(actions, "AIWORKER_POST_V1_POLYMARKET_BACKTEST");
+    await expect(info.validate(runtime, messageWith("what is the total supply of Base USDC?"))).resolves.toBe(true);
     await expect(info.validate(runtime, messageWith(JSON.stringify({ address: USDC })))).resolves.toBe(true);
-    await expect(info.validate(runtime, messageWith("what is the total supply of Base USDC?"))).resolves.toBe(false);
-    await expect(backtest.validate(runtime, messageWith(JSON.stringify({ rule: "martingale" })))).resolves.toBe(false);
-    await expect(backtest.validate(runtime, messageWith(JSON.stringify({ rule: "favorite_hold" })))).resolves.toBe(true);
+    await expect(backtest.validate(runtime, messageWith(JSON.stringify({ rule: "martingale" })))).resolves.toBe(true);
+  });
+
+  it("a plain-text turn with no arguments reaches the handler and is answered with the expected fields — never a paid call", async () => {
+    const { fetchImpl, calls } = fakeFetch(() => jsonResponse({ never: true }));
+    const actions = actionsFromRoutes(routes(), { baseUrl: BASE_URL, fetchImpl });
+    const info = actionByName(actions, "AIWORKER_GET_V1_TOKEN_INFO");
+    const r = await info.handler(runtime, messageWith("what is the total supply of Base USDC?"));
+    expect(r).toMatchObject({ success: false, error: "invalid_arguments" });
+    expect(JSON.parse(r.text ?? "{}")).toMatchObject({ expected: { required: ["address"] } });
+    expect(calls).toHaveLength(0);
   });
 });
 
